@@ -102,20 +102,10 @@ int main() {
       Ddistance_center = (Ddistance_left + Ddistance_right) / 2.0f;   // linear distance center
       Dtheta = (Ddistance_right - Ddistance_left) / L; // delta angle
 
-      if (abs(Dtick_right - Dtick_left) <= 20) {
-        Dx = Ddistance_left * cos(th);
-        Dy = Ddistance_left * sin(th);
-				printf("straight\n");
-      } 
-			else {
-        r_c = Ddistance_center / Dtheta; // radius to instantaneous center of curvature (ICC)
-        icc_x = x - r_c * sin(th); // x of  ICC
-        icc_y = y + r_c * cos(th); // y of  ICC
-
-        Dx = (cos(Dtheta) * (x - icc_x) - sin(Dtheta) * (y - icc_y) + icc_x - x) * 100; // total distance travelled in x in cm
-        Dy = (sin(Dtheta) * (x - icc_x) + cos(Dtheta) * (y - icc_y) + icc_y - y) * 100; // total distance travelled in y in cm
-				printf("turning\n");
-      }
+			Dx = Ddistance_left * cos(th);
+			Dy = Ddistance_left * sin(th);
+			printf("straight\n");
+      
 
       // Update position and velocity
       x += Dx;

@@ -64,8 +64,6 @@ int main() {
   int currCounter_left = counter_left.read();
   int Dtick_right = 0;
   int Dtick_left = 0;
-  // double rps_right;
-  // double rps_left;
   double Ddistance_right = 0;
   double Ddistance_left = 0;
   double Ddistance_center = 0;
@@ -93,9 +91,6 @@ int main() {
     Dt = currTime - prevTime;
 
     if (Dtick_right > 0 || Dtick_left > 0) {
-
-      // rps_right = (double(Dtick_right) / double(Dt)) * 50000.0f;
-      // rps_left = (double(Dtick_left) / double(Dt) * 50000.0f);
 
       Ddistance_right = double(Dtick_right) * DistancePerCount; // linear distance right wheel
       Ddistance_left = double(Dtick_left) * DistancePerCount; // linear distance left wheel

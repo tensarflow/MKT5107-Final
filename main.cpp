@@ -37,8 +37,13 @@ void turnForward() {
   RIN2 = 0;
   LIN1 = 1;
   LIN2 = 0;
-  PWMr.write(0.4f); // percentage
-  PWMl.write(0.4f);
+  PWMr.write(0.0f); // 0 = 0%, 1 = 100%
+  PWMl.write(0.0f);
+}
+
+void setSpeedForward(float speed) {
+	PWMr.write(speed); // percentage
+  PWMl.write(speed);
 }
 
 void stopVehicle() {
@@ -79,6 +84,16 @@ int main() {
   int currTime = us;
   int prevTime = us;
   int Dt = 0;
+	bool isAcceleration = true;
+	double setPosition_x = 2.0;
+	double error = 0;
+	double cumError = 0;
+	double rateError = 0;
+	double lastError = 0;
+	double speed;
+	double K_p = 1.5;
+	double K_i = 0.0000000001;
+	double K_d = 10;
 
   while (1) {
 
@@ -90,37 +105,56 @@ int main() {
     Dtick_left = currCounter_left - prevCounter_left;
     Dt = currTime - prevTime;
 
-    if (Dtick_right > 0 || Dtick_left > 0) {
+		Ddistance_right = double(Dtick_right) * DistancePerCount; // linear distance right wheel
+		Ddistance_left = double(Dtick_left) * DistancePerCount; // linear distance left wheel
+		Ddistance_center = (Ddistance_left + Ddistance_right) / 2.0f;   // linear distance center
+		// Dtheta = (Ddistance_right - Ddistance_left) / L; // delta angle commented out because only x-control 
+		Dtheta = 0.0;
 
-      Ddistance_right = double(Dtick_right) * DistancePerCount; // linear distance right wheel
-      Ddistance_left = double(Dtick_left) * DistancePerCount; // linear distance left wheel
-      Ddistance_center = (Ddistance_left + Ddistance_right) / 2.0f;   // linear distance center
-      Dtheta = (Ddistance_right - Ddistance_left) / L; // delta angle
+		Dx = Ddistance_left * cos(th);
+		Dy = Ddistance_left * sin(th);
+		
+		// Update position and velocity
+		x += Dx;
+		y += Dy;
+		th = fmod((th + Dtheta), TWO_PI);
+		v_x = (Ddistance_center / Dt) * 100000000.0f; // Factor for conversion from m/µs to cm/s
+		v_th = Dtheta / Dt;
 
-			Dx = Ddistance_left * cos(th);
-			Dy = Ddistance_left * sin(th);
-			printf("straight\n");
+
+		if(isAcceleration){
+			speed = speed + 0.01f;
+			setSpeedForward(speed);
+			wait_us(2000);
+
+			if(speed >= 0.4) isAcceleration = false; 
+		}
+		else{
+			error = setPosition_x - x;
+      cumError += error * Dt;
+      rateError = (error - lastError) / Dt;
       
+      //if (cumError >4000) cumError = 4000;
+      //if (cumError <-4000) cumError = -4000;
+      
+			speed = K_p * error + K_i * cumError + K_d * rateError;
+			if( speed > 1.0f ) { speed = 1.0f; }
+			else if ( speed < 0.2f ) { speed = 0.2f; }
 
-      // Update position and velocity
-      x += Dx;
-      y += Dy;
-      th = fmod((th + Dtheta), TWO_PI);
-      v_x = (Ddistance_center / Dt) * 100000000.0f; // Factor for conversion from m/µs to cm/s
-      v_th = Dtheta / Dt;
-    }
+			setSpeedForward(speed);
+			wait_us(20000);
+		}
 
-    prevCounter_right = currCounter_right;
-    prevCounter_left = currCounter_left;
-    prevTime = currTime;
+		prevCounter_right = currCounter_right;
+		prevCounter_left = currCounter_left;
+		prevTime = currTime;
 
-    wait_us(20000);
-		printf("%f \t %d \t %d \t", x, Dtick_right, Dtick_left);
+		printf("%f\t %f\n", x, speed);
+
 		if ( x >= 2.0 ){
 			printf("Reached goal! \n");
 			stopVehicle();
 			break; 
-			}
-
+		}
   }
 }
